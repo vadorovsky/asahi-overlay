@@ -4,6 +4,8 @@
 EAPI="8"
 PYTHON_COMPAT=( python3_{10..11} )
 
+inherit toolchain-funcs
+
 DESCRIPTION="Asahi Linux fork of Das U-Boot"
 HOMEPAGE="https://asahilinux.org/"
 LICENSE="GPL-2"
@@ -32,18 +34,38 @@ BDEPEND="
 RDEPEND="${BDEPEND}
 	sys-apps/asahi-scripts"
 
+PATCHES=(
+	"${FILESDIR}/u-boot-2023.07.02_p4-pci-apple-Initialize-and-increment-the-port-counter.patch"
+)
+
 src_unpack() {
 	unpack ${PN}-${PV}.tar.gz || die "Could not unpack sources!"
 	mv u-boot-${MY_P} ${PN}-${PV}
 }
 
 src_configure() {
-	emake apple_m1_defconfig || die "failed to apply defconfig!"
+	local makeargs=(
+		CC="$(tc-getBUILD_CC)"
+		CXX="$(tc-getBUILD_CXX)"
+		HOSTCC="$(tc-getBUILD_CC)"
+		HOSTCXX="$(tc-getBUILD_CXX)"
+		HOSTCFLAGS="${BUILD_CFLAGS}"
+		HOSTLDFLAGS="${BUILD_LDFLAGS}"
+	)
+	emake "${makeargs[@]}" apple_m1_defconfig || die "failed to apply defconfig!"
 }
 
 src_compile() {
 	cd "${S}" || die
-	emake || die "emake failed"
+	local makeargs=(
+		CC="$(tc-getBUILD_CC)"
+		CXX="$(tc-getBUILD_CXX)"
+		HOSTCC="$(tc-getBUILD_CC)"
+		HOSTCXX="$(tc-getBUILD_CXX)"
+		HOSTCFLAGS="${BUILD_CFLAGS}"
+		HOSTLDFLAGS="${BUILD_LDFLAGS}"
+	)
+	emake "${makeargs[@]}" || die "emake failed"
 }
 
 src_install() {
